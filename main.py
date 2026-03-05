@@ -1,10 +1,11 @@
 from metrics.summarization import get_summary_score
 from metrics.prompt_alignment import get_prompt_alignment_score
+from metrics.hallucination import get_hallucination_score
 
 from models.gcp_gemini import GCP_GENERATION_MODEL
 
-def summary_metric():
-    print("---  Summarization Score  ---")
+def summary_score():
+    print("---  Summarization  ---")
 
     # The original text to summarize
     input = """
@@ -47,6 +48,28 @@ def prompt_alignment_score():
     print(f"\nPrompt alignment metric: {metric.score}")
     print(f"Justification: {metric.reason}\n")
 
+def hallucination_score():
+    print("--- Hallucination ---")
+
+    # This will get replaced by the actual documents passed to the LLM
+    context = ["A man with blond-hair, and a brown shirt drinking out of a public water fountain."]
+
+    # Get the user context or question
+    input = "What was the blond doing?"
+
+    # Obtain an answer from the LLM
+    with open("./prompts/hallucination_prompt.md") as f:
+        hallucination_prompt = f.read()
+
+    ans = GCP_GENERATION_MODEL().generate("\n".join([hallucination_prompt, context[0]]), input)
+    print(f"Generated answer:\n{ans}")
+
+    # Obtain the metric
+    metric = get_hallucination_score(context, input, ans)
+    print(f"\nHallucination metric: {metric.score}")
+    print(f"Justification: {metric.reason}\n")
+
 if __name__ == "__main__":
-    summary = summary_metric()
+    summary = summary_score()
     prompt_alignment = prompt_alignment_score()
+    hallucination = hallucination_score()
