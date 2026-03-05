@@ -108,8 +108,8 @@ def geval_score():
         metric_criteria=criteria,
         rubric=rubric
     )
-    print(f"\t  Correctness score: {correctness_metric.score}")
-    print(f"\t  Justification: {correctness_metric.reason}")
+    print(f"\t Correctness score: {correctness_metric.score}")
+    print(f"\t Justification: {correctness_metric.reason}")
 
     print("\t> Clarity")
     name = "Clarity"
@@ -129,8 +129,8 @@ def geval_score():
         metric_steps=evaluation_steps,
         rubric=rubric
     )
-    print(f"\t  Clarity score: {clarity_metric.score}")
-    print(f"\t  Justification: {clarity_metric.reason}")
+    print(f"\t Clarity score: {clarity_metric.score}")
+    print(f"\t Justification: {clarity_metric.reason}")
 
     print("\t> Professionalism")
     name = "Professionalism"
@@ -150,8 +150,8 @@ def geval_score():
         metric_steps=evaluation_steps,
         rubric=rubric
     )
-    print(f"\t  Professionalism score: {prof_metric.score}")
-    print(f"\t  Justification: {prof_metric.reason}")
+    print(f"\t Professionalism score: {prof_metric.score}")
+    print(f"\t Justification: {prof_metric.reason}")
 
     print("\t> PII Leakage")
     name = "PII Leakage"
@@ -171,8 +171,8 @@ def geval_score():
         metric_steps=evaluation_steps,
         rubric=rubric
     )
-    print(f"\t  PII Leakage score: {leakage_metric.score}")
-    print(f"\t  Justification: {leakage_metric.reason}")
+    print(f"\t PII Leakage score: {leakage_metric.score}")
+    print(f"\t Justification: {leakage_metric.reason}")
 
     # The following sample is used for RAG use cases.
     # This approach penalizes hallucinations harder than the standard RAG metrics managed by deepeval
