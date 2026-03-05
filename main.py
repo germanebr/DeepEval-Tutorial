@@ -1,8 +1,9 @@
 from metrics.summarization import get_summary_score
+from metrics.prompt_alignment import get_prompt_alignment_score
 
 from models.gcp_gemini import GCP_GENERATION_MODEL
 
-def summarize():
+def summary_metric():
     print("---  Summarization Score  ---")
 
     # The original text to summarize
@@ -26,7 +27,26 @@ def summarize():
     metric = get_summary_score(input, summary)
     print(f"\nSummarization metric: {metric.score}")
     print(f"Score breakdown: {metric.score_breakdown}")
-    print(f"Justification: {metric.reason}")
+    print(f"Justification: {metric.reason}\n")
+
+def prompt_alignment_score():
+    print("--- Prompt Alignment ---")
+
+    # The user query
+    input = "What if this shoes don't fit?"
+
+    # Obtain an answer from the LLM
+    with open("./prompts/prompt_alignment_prompt.md") as f:
+        prompt_alignment_prompt = f.read()
+
+    ans = GCP_GENERATION_MODEL().generate(prompt_alignment_prompt, input)
+    print(f"Generated answer:\n{ans}")
+
+    # Obtain the metric
+    metric = get_prompt_alignment_score(prompt_alignment_prompt, input, ans)
+    print(f"\nPrompt alignment metric: {metric.score}")
+    print(f"Justification: {metric.reason}\n")
 
 if __name__ == "__main__":
-    summary = summarize()
+    summary = summary_metric()
+    prompt_alignment = prompt_alignment_score()
