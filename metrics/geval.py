@@ -19,12 +19,15 @@ The way G-Eval works is that the judge model first generates a series of evaluat
 are created (or given), the judge model uses that information to determine the final score.
 
 Additional information found in https://deepeval.com/docs/metrics-llm-evals
+
+The conversational GEval score follows the same process as the regular GEval, but is used to evaluate complete conversations instead.
+It is currently the best tool for evaluating multi-turn conversations and making sure the LLM consistently generates responses up to standard.
+
+Additional information found in https://deepeval.com/docs/metrics-conversational-g-eval
 """
 
-import textwrap
-
-from deepeval.test_case import LLMTestCase, LLMTestCaseParams
-from deepeval.metrics import GEval
+from deepeval.test_case import ConversationalTestCase, LLMTestCase, LLMTestCaseParams, Turn
+from deepeval.metrics import ConversationalGEval, GEval
 from deepeval.metrics.g_eval import Rubric
 
 from models.gcp_gemini import gcp_gemini_eval_model
@@ -57,6 +60,32 @@ def get_geval_score(user_input:str, generated_ans:str, expected_output:str,
         model=gcp_gemini_eval_model, # DeepEval model that will perform as the LLM-as-a-judge
         strict_mode=False,  # When True, the metric score will only have a total value of 0 or 1
         verbose_mode=False,  # When True, prints the intermediate steps used to calculate the score
+    )
+    metric.measure(test_case)
+    return metric
+
+def get_conv_geval_score(turns:list[Turn],
+                         metric_name:str, metric_criteria:Optional[str]=None, metric_steps:Optional[list[str]]=None):
+    test_case = ConversationalTestCase(
+        turns=turns
+    )
+
+    if metric_criteria:
+        print("\t* Using criteria instead of evaluation steps")
+        metric_steps = None
+    elif metric_steps:
+        print("\t* Using evaluation steps instead of criteria")
+    else:
+        raise Exception("You must provide either a criteria or a list with evaluation steps to perform this metric.")
+
+    metric = ConversationalGEval(
+        name=metric_name,
+        criteria=metric_criteria,
+        evaluation_steps=metric_steps,
+        threshold=0.5,
+        model=gcp_gemini_eval_model,
+        strict_mode=False,
+        verbose_mode=False,
     )
     metric.measure(test_case)
     return metric

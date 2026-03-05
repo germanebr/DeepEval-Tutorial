@@ -1,9 +1,9 @@
 from metrics.summarization import get_summary_score
 from metrics.prompt_alignment import get_prompt_alignment_score
 from metrics.hallucination import get_hallucination_score
-from metrics.geval import get_geval_score
+from metrics.geval import get_geval_score, get_conv_geval_score
 
-from deepeval.test_case import LLMTestCaseParams
+from deepeval.test_case import LLMTestCaseParams, Turn
 from deepeval.metrics.g_eval import Rubric
 
 from models.gcp_gemini import GCP_GENERATION_MODEL
@@ -189,8 +189,30 @@ def geval_score():
     #     evaluation_params=[LLMTestCaseParams.ACTUAL_OUTPUT, LLMTestCaseParams.RETRIEVAL_CONTEXT],
     # )
 
+def conv_geval_score():
+    print("--- Conversational G-Eval ---")
+
+    # Prepare the conversation
+    turns = [
+        Turn(role="assistant", content="Hello, welcome to the general store. How can I help you?"),
+        Turn(role="user", content="Hi, I want to buy those shoes."),
+        Turn(role="assistant", content="Certainly! That pair has a total cost of $25 after taxes. Do you want me to bag them for you?"),
+        Turn(role="user", content="Yes, please. What if this shoes don't fit?"),
+        Turn(role="assistant", content="As long as you bring them with your purchse ticket within the next 30 days, we can give you a total refund.")
+    ]
+    print(turns)
+
+    # Get the metric of the conversation
+    name = "Professionalism"
+    criteria = "Determine whether the assistant has acted professionally based on the content."
+
+    metric = get_conv_geval_score(turns, name, criteria)
+    print(f"\nConversational GEval metric: {metric.score}")
+    print(f"Justification: {metric.reason}\n")
+
 if __name__ == "__main__":
-    summary = summary_score()
-    prompt_alignment = prompt_alignment_score()
-    hallucination = hallucination_score()
-    geval = geval_score()
+    # summary = summary_score()
+    # prompt_alignment = prompt_alignment_score()
+    # hallucination = hallucination_score()
+    # geval = geval_score()
+    conv_geval = conv_geval_score()
