@@ -24,18 +24,20 @@ The conversational GEval score follows the same process as the regular GEval, bu
 It is currently the best tool for evaluating multi-turn conversations and making sure the LLM consistently generates responses up to standard.
 
 Additional information found in https://deepeval.com/docs/metrics-conversational-g-eval
+
+The Arena G-Eval metric is used to evaluate and compare multiple test cases, selecting the best one among the group.
+
+Additional information found in https://deepeval.com/docs/metrics-arena-g-eval
 """
 
-from deepeval.test_case import ConversationalTestCase, LLMTestCase, LLMTestCaseParams, Turn
-from deepeval.metrics import ConversationalGEval, GEval
+from deepeval.test_case import ArenaTestCase, Contestant, ConversationalTestCase, LLMTestCase, LLMTestCaseParams, Turn
+from deepeval.metrics import ArenaGEval, ConversationalGEval, GEval
 from deepeval.metrics.g_eval import Rubric
 
 from models.gcp_gemini import gcp_gemini_eval_model
 
-from typing import Optional
-
 def get_geval_score(user_input:str, generated_ans:str, expected_output:str,
-                    metric_name:str, evaluation_parameters:list[LLMTestCaseParams], metric_criteria:Optional[str]=None, metric_steps:Optional[list[str]]=None, rubric:Optional[list[Rubric]]=None):
+                    metric_name:str, evaluation_parameters:list[LLMTestCaseParams], metric_criteria:str|None=None, metric_steps:list[str]|None=None, rubric:list[Rubric]|None=None):
     test_case = LLMTestCase(
         input=user_input,
         actual_output=generated_ans,
@@ -65,7 +67,7 @@ def get_geval_score(user_input:str, generated_ans:str, expected_output:str,
     return metric
 
 def get_conv_geval_score(turns:list[Turn],
-                         metric_name:str, metric_criteria:Optional[str]=None, metric_steps:Optional[list[str]]=None):
+                         metric_name:str, metric_criteria:str|None=None, metric_steps:list[str]|None=None):
     test_case = ConversationalTestCase(
         turns=turns
     )
@@ -88,4 +90,40 @@ def get_conv_geval_score(turns:list[Turn],
         verbose_mode=False,
     )
     metric.measure(test_case)
+    return metric
+
+def get_arena_geval(inputs:list[dict],
+                    metric_name:str, metric_criteria:str|None=None, metric_steps:list[str]|None=None) -> ArenaGEval:
+    # Prepare the contestants
+    contestants = ArenaTestCase(
+        [
+            Contestant(
+                name=i["name"], # The name of the contestant to differentiate from the rest
+                hyperparameters=i["hyperparameters"], # Any additional metadata to be considered
+                test_case=LLMTestCase(
+                    input=i["input"],
+                    actual_output=i["actual_output"],
+                )
+            ) for i in inputs
+        ]
+    )
+
+    if metric_criteria:
+        print("\t* Using criteria instead of evaluation steps")
+        metric_steps = None
+    elif metric_steps:
+        print("\t* Using evaluation steps instead of criteria")
+    else:
+        raise Exception("You must provide either a criteria or a list with evaluation steps to perform this metric.")
+
+    metric = ArenaGEval(
+        name=metric_name,
+        criteria=metric_criteria,
+        evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+        evaluation_steps=metric_steps,
+        model=gcp_gemini_eval_model,
+        verbose_mode=False,
+    )
+
+    metric.measure(contestants)
     return metric

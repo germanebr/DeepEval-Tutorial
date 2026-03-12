@@ -1,7 +1,7 @@
 from metrics.summarization import get_summary_score
 from metrics.prompt_alignment import get_prompt_alignment_score
 from metrics.hallucination import get_hallucination_score
-from metrics.geval import get_geval_score, get_conv_geval_score
+from metrics.geval import get_geval_score, get_conv_geval_score, get_arena_geval
 from metrics.dag import get_dag_score, get_conv_dag_score
 
 from deepeval.test_case import ConversationalTestCase, LLMTestCaseParams, Turn
@@ -256,6 +256,36 @@ def conv_dag():
     print(f"\nConversational DAG metric: {metric.score}")
     print(f"Justification: {metric.reason}\n")
 
+def arena_geval():
+    print("--- Arena G-Eval ---")
+
+    topic = "A smurf and Darth Vader meeting at a singles bar"
+
+    # Generate the output for all the contestants
+    with open("./prompts/arena_prompt1.md") as f:
+        prompt1 = f.read()
+    with open("./prompts/arena_prompt2.md") as f:
+        prompt2 = f.read()
+
+    ans1 = GCP_GENERATION_MODEL().generate(prompt1, topic)
+    print(f"Joke 1:\n{ans1}\n")
+    ans2 = GCP_GENERATION_MODEL().generate(prompt2, topic)
+    print(f"Joke 2:\n{ans2}\n")
+
+    # Obtain the metric
+    contestants = [
+        {"name":'Pro Comedian', "hyperparameters":{"model":'Gemini 2.5 Pro', "prompt":prompt1}, "input":topic, "actual_output":ans1},
+        {"name":'Amateur Comedian', "hyperparameters":{"model":'Gemini 2.5 Pro', "prompt":prompt2}, "input":topic, "actual_output":ans2}
+    ]
+
+    metric = get_arena_geval(
+        inputs=contestants,
+        metric_name="Joke Generation",
+        metric_criteria="Choose the winner of the most funny story based on the given topic and the generated story. Consider that the audience is adult only and that the story must not be too long either."
+    )
+    print(f"\n Arena GEval winner: {metric.winner}")
+    print(f"Justification: {metric.reason}\n")
+
 if __name__ == "__main__":
     # summary = summary_score()
     # prompt_alignment = prompt_alignment_score()
@@ -263,4 +293,5 @@ if __name__ == "__main__":
     # geval = geval_score()
     # conv_geval = conv_geval_score()
     # dag = dag_score()
-    conv_dag = conv_dag()
+    # conv_dag = conv_dag()
+    arena_geval = arena_geval()
