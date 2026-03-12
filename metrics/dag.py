@@ -12,16 +12,26 @@ The DAG structure must have direct edges and cannot be cyclic. It will be compos
 * Verdict Node: This will ALWAYS be the leaf node of the DAG, and determines the final output score based on the evaluation path
 
 Additional information found in https://deepeval.com/docs/metrics-dag
+
+Conversational DAG follows the same process as regular DAG, but it evaluates a whole conversation (multi-turn).
+
+Additional information found in https://deepeval.com/docs/metrics-conversational-dag
 """
 
-from deepeval.test_case import LLMTestCaseParams, LLMTestCase
-from deepeval.metrics import DAGMetric, GEval
+from deepeval.test_case import ConversationalTestCase, LLMTestCaseParams, LLMTestCase, Turn, TurnParams
+from deepeval.metrics import ConversationalDAGMetric, DAGMetric, GEval
 from deepeval.metrics.dag import (
     DeepAcyclicGraph,
     TaskNode,
     BinaryJudgementNode,
     NonBinaryJudgementNode,
     VerdictNode
+)
+from deepeval.metrics.conversational_dag import (
+    ConversationalTaskNode,
+    ConversationalBinaryJudgementNode,
+    ConversationalNonBinaryJudgementNode,
+    ConversationalVerdictNode
 )
 
 from models.gcp_gemini import gcp_gemini_eval_model
@@ -32,6 +42,18 @@ def _build_task_node(instructions:str, evaluation_params:list[LLMTestCaseParams]
         evaluation_params=evaluation_params,
         output_label=output_label,
         children=children
+    )
+
+def _build_conv_task_node(instructions:str, output_label:str,
+                          children:list[ConversationalBinaryJudgementNode|ConversationalNonBinaryJudgementNode|ConversationalVerdictNode|None]=None,
+                          label:str|None=None, turn_window:tuple[int, int]|None=None) -> ConversationalTaskNode:
+    return ConversationalTaskNode(
+        instructions=instructions,  # String specifying how to process a conversation, and/or outputs given to the node
+        output_label=output_label,  # A string that represents the final output. It'll be used for the child nodes to refer to the output
+        children=children,  # A list of nodes that will work with the output of this one
+        evaluation_params=[TurnParams.ROLE, TurnParams.CONTENT],    # The parameters that the node need to evaluate from the input
+        label=label,    # A string that will be displayed in the verbose logs if verbose_mode is True
+        turn_window=turn_window # A tuple of 2 indices (inclusive) specifying the conversation window the task node must focus on
     )
 
 def _build_verdict_node(verdict:str|bool, param:GEval|VerdictNode|BinaryJudgementNode|NonBinaryJudgementNode|int) -> VerdictNode:
@@ -48,6 +70,22 @@ def _build_verdict_node(verdict:str|bool, param:GEval|VerdictNode|BinaryJudgemen
             verdict=verdict,
             child=param
         )
+    
+def _build_conv_verdict_node(verdict:str|bool, param:GEval|ConversationalBinaryJudgementNode|ConversationalNonBinaryJudgementNode|ConversationalVerdictNode|int) -> ConversationalVerdictNode:
+    # If the parameter has a score, it's one of the last nodes from the DAG
+    if isinstance(param, int):
+        return ConversationalVerdictNode(
+            verdict=verdict,
+            score=param
+        )
+    
+    # If the parameter has a child node, it must specify which node will be used to continue with the DAG
+    else:
+        return ConversationalVerdictNode(
+            verdict=verdict,
+            child=param,
+        )
+
 
 def _build_nonbinary_judgement_node(criteria:str, children:list[dict[str, int|NonBinaryJudgementNode|BinaryJudgementNode]]) -> NonBinaryJudgementNode:
     # Build the Verdict Nodes needed
@@ -58,6 +96,18 @@ def _build_nonbinary_judgement_node(criteria:str, children:list[dict[str, int|No
         children=verdict_nodes
     )
 
+def _build_conv_nonbinary_judgement_node(criteria:str, children:list[dict[str, int|ConversationalBinaryJudgementNode|ConversationalNonBinaryJudgementNode]]) -> ConversationalNonBinaryJudgementNode:
+    # Build the Verdict Nodes needed
+    verdict_nodes = [_build_conv_verdict_node(i['verdict'], i['param']) for i in children]
+
+    return ConversationalNonBinaryJudgementNode(
+        criteria=criteria,
+        children=verdict_nodes,
+        # evaluation_params=[TurnParams.ROLE, TurnParams.CONTENT],    # The parameters that the node need to evaluate from the input
+        # label=label,    # A string that will be displayed in the verbose logs if verbose_mode is True
+        # turn_window=turn_window # A tuple of 2 indices (inclusive) specifying the conversation window the task node must focus on
+    )
+
 def _build_binary_judgement_node(criteria:str, children:list[dict[bool, int|NonBinaryJudgementNode|BinaryJudgementNode]]) -> BinaryJudgementNode:
     # Build the Verdict Nodes needed
     verdict_nodes = [_build_verdict_node(i['verdict'], i['param']) for i in children]
@@ -65,6 +115,18 @@ def _build_binary_judgement_node(criteria:str, children:list[dict[bool, int|NonB
     return BinaryJudgementNode(
         criteria=criteria,
         children=verdict_nodes
+    )
+
+def _build_conv_binary_judgement_node(criteria:str, children:list[dict[str, int|ConversationalBinaryJudgementNode|ConversationalNonBinaryJudgementNode]]) -> ConversationalNonBinaryJudgementNode:
+    # Build the Verdict Nodes needed
+    verdict_nodes = [_build_conv_verdict_node(i['verdict'], i['param']) for i in children]
+
+    return ConversationalBinaryJudgementNode(
+        criteria=criteria,
+        children=verdict_nodes,
+        # evaluation_params=[TurnParams.ROLE, TurnParams.CONTENT],    # The parameters that the node need to evaluate from the input
+        # label=label,    # A string that will be displayed in the verbose logs if verbose_mode is True
+        # turn_window=turn_window # A tuple of 2 indices (inclusive) specifying the conversation window the task node must focus on
     )
 
 def _build_dag():
@@ -107,6 +169,34 @@ def _build_dag():
     dag = DeepAcyclicGraph(root_nodes=[extract_headings_node])
     return dag
 
+def _build_conv_dag():
+    # Build the DAG structure to evaluate, from bottom to top
+    non_binary_node = _build_conv_nonbinary_judgement_node(
+        criteria="How was the assistant's behaviour towards the user?",
+        children=[
+            {"verdict": "Rude", "param": 0},
+            {"verdict": "Neutral", "param": 5},
+            {"verdict": "Playful", "param": 10},
+        ]
+    )
+
+    binary_node = _build_conv_binary_judgement_node(
+        criteria="Do the assistant's replies satisfy user's questions?",
+        children=[
+            {"verdict": True, "param": non_binary_node},
+            {"verdict": False, "param": 0}
+        ]
+    )
+
+    task_node = _build_conv_task_node(
+        instructions="Summarize the conversation and explain assistant's behaviour overall",
+        output_label="Summary",
+        children=[binary_node]
+    )
+
+    dag = DeepAcyclicGraph(root_nodes=[task_node])
+    return dag
+
 def get_dag_score(user_input:str, generated_ans:str, metric_name:str):
     # Prepare the test case
     test_case = LLMTestCase(
@@ -126,6 +216,28 @@ def get_dag_score(user_input:str, generated_ans:str, metric_name:str):
         include_reason=True, # Includes a justification for the decision
         strict_mode=False,  # When True, the metric score will only have a total value of 0 or 1
         verbose_mode=False,  # When True, prints the intermediate steps used to calculate the score
+    )
+    metric.measure(test_case)
+    return metric
+
+def get_conv_dag_score(turns:list[Turn], metric_name:str):
+    # Prepare the test case
+    test_case = ConversationalTestCase(
+        turns=turns
+    )
+
+    # Get the DAG structure for the conversation
+    conv_dag = _build_conv_dag()
+
+    # Build the metric
+    metric = ConversationalDAGMetric(
+        name=metric_name,
+        dag=conv_dag,
+        threshold=0.5,
+        model=gcp_gemini_eval_model,
+        include_reason=True,
+        strict_mode=False,
+        verbose_mode=False,
     )
     metric.measure(test_case)
     return metric

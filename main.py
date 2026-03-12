@@ -2,9 +2,9 @@ from metrics.summarization import get_summary_score
 from metrics.prompt_alignment import get_prompt_alignment_score
 from metrics.hallucination import get_hallucination_score
 from metrics.geval import get_geval_score, get_conv_geval_score
-from metrics.dag import get_dag_score
+from metrics.dag import get_dag_score, get_conv_dag_score
 
-from deepeval.test_case import LLMTestCaseParams, Turn
+from deepeval.test_case import ConversationalTestCase, LLMTestCaseParams, Turn
 from deepeval.metrics.g_eval import Rubric
 
 from models.gcp_gemini import GCP_GENERATION_MODEL
@@ -237,10 +237,30 @@ Alice: "Plan: fixes by Friday, marketing prep Monday, sync next Wednesday. Thank
     print(f"\nDAG metric: {metric.score}")
     print(f"Justification: {metric.reason}\n")
 
+def conv_dag():
+    print("--- Conversational DAG ---")
+
+    # Prepare the conversation that will be evaluated
+    turns = [
+        Turn(role="user", content="what's the weather like today?"),
+        Turn(role="assistant", content="Where do you live bro? T~T"),
+        Turn(role="user", content="Just tell me the weather in Paris"),
+        Turn(role="assistant", content="The weather in Paris today is sunny and 24°C."),
+        Turn(role="user", content="Should I take an umbrella?"),
+        Turn(role="assistant", content="You trying to be stylish? I don't recommend it.")
+    ]
+    print(turns)
+
+    # Get the metric of the conversation
+    metric = get_conv_dag_score(turns, "Instruction Following")
+    print(f"\nConversational DAG metric: {metric.score}")
+    print(f"Justification: {metric.reason}\n")
+
 if __name__ == "__main__":
     # summary = summary_score()
     # prompt_alignment = prompt_alignment_score()
     # hallucination = hallucination_score()
     # geval = geval_score()
     # conv_geval = conv_geval_score()
-    dag = dag_score()
+    # dag = dag_score()
+    conv_dag = conv_dag()
