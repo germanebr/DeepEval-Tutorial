@@ -283,15 +283,15 @@ def arena_geval():
         metric_name="Joke Generation",
         metric_criteria="Choose the winner of the most funny story based on the given topic and the generated story. Consider that the audience is adult only and that the story must not be too long either."
     )
-    print(f"\n Arena GEval winner: {metric.winner}")
+    print(f"\nArena GEval winner: {metric.winner}")
     print(f"Justification: {metric.reason}\n")
 
 if __name__ == "__main__":
-    # summary = summary_score()
-    # prompt_alignment = prompt_alignment_score()
-    # hallucination = hallucination_score()
-    # geval = geval_score()
-    # conv_geval = conv_geval_score()
-    # dag = dag_score()
-    # conv_dag = conv_dag()
-    arena_geval = arena_geval()
+    summary_score()
+    prompt_alignment_score()
+    hallucination_score()
+    geval_score()
+    conv_geval_score()
+    dag_score()
+    conv_dag()
+    arena_geval()
