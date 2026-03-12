@@ -2,6 +2,7 @@ from metrics.summarization import get_summary_score
 from metrics.prompt_alignment import get_prompt_alignment_score
 from metrics.hallucination import get_hallucination_score
 from metrics.geval import get_geval_score, get_conv_geval_score
+from metrics.dag import get_dag_score
 
 from deepeval.test_case import LLMTestCaseParams, Turn
 from deepeval.metrics.g_eval import Rubric
@@ -210,9 +211,36 @@ def conv_geval_score():
     print(f"\nConversational GEval metric: {metric.score}")
     print(f"Justification: {metric.reason}\n")
 
+def dag_score():
+    print("--- DAG ---")
+
+    input = """
+Alice: "Today's agenda: product update, blockers, and marketing timeline. Bob, updates?"
+Bob: "Core features are done, but we're optimizing performance for large datasets. Fixes by Friday, testing next week."
+Alice: "Charlie, does this timeline work for marketing?"
+Charlie: "We need finalized messaging by Monday."
+Alice: "Bob, can we provide a stable version by then?"
+Bob: "Yes, we'll share an early build."
+Charlie: "Great, we'll start preparing assets."
+Alice: "Plan: fixes by Friday, marketing prep Monday, sync next Wednesday. Thanks, everyone!"
+"""
+
+    # Obtain an answer from the LLM
+    with open("./prompts/dag_prompt.md") as f:
+        dag_prompt = f.read()
+
+    ans = GCP_GENERATION_MODEL().generate(dag_prompt, input)
+    print(f"Generated answer:\n{ans}")
+
+    # Obtain the metric
+    metric = get_dag_score(input, ans, "Summary Correctness")
+    print(f"\nDAG metric: {metric.score}")
+    print(f"Justification: {metric.reason}\n")
+
 if __name__ == "__main__":
     # summary = summary_score()
     # prompt_alignment = prompt_alignment_score()
     # hallucination = hallucination_score()
     # geval = geval_score()
-    conv_geval = conv_geval_score()
+    # conv_geval = conv_geval_score()
+    dag = dag_score()
