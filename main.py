@@ -1,10 +1,10 @@
-from metrics.summarization import get_summary_score
-from metrics.prompt_alignment import get_prompt_alignment_score
-from metrics.hallucination import get_hallucination_score
-from metrics.geval import get_geval_score, get_conv_geval_score, get_arena_geval
-from metrics.dag import get_dag_score, get_conv_dag_score
+from custom.metrics.summarization import get_summary_score
+from custom.metrics.prompt_alignment import get_prompt_alignment_score
+from custom.metrics.hallucination import get_hallucination_score
+from custom.metrics.geval import get_geval_score, get_conv_geval_score, get_arena_geval
+from custom.metrics.dag import get_dag_score, get_conv_dag_score
 
-from deepeval.test_case import ConversationalTestCase, LLMTestCaseParams, Turn
+from deepeval.test_case import LLMTestCaseParams, Turn
 from deepeval.metrics.g_eval import Rubric
 
 from models.gcp_gemini import GCP_GENERATION_MODEL
@@ -23,7 +23,7 @@ def summary_score():
     """
 
     # Generate the summary of the input text
-    with open("./prompts/summarization_prompt.md") as f:
+    with open("./custom/prompts/summarization_prompt.md") as f:
         summarization_prompt = f.read()
 
     summary = GCP_GENERATION_MODEL().generate(summarization_prompt, input)
@@ -42,7 +42,7 @@ def prompt_alignment_score():
     input = "What if this shoes don't fit?"
 
     # Obtain an answer from the LLM
-    with open("./prompts/prompt_alignment_prompt.md") as f:
+    with open("./custom/prompts/prompt_alignment_prompt.md") as f:
         prompt_alignment_prompt = f.read()
 
     ans = GCP_GENERATION_MODEL().generate(prompt_alignment_prompt, input)
@@ -63,7 +63,7 @@ def hallucination_score():
     input = "What was the blond doing?"
 
     # Obtain an answer from the LLM
-    with open("./prompts/hallucination_prompt.md") as f:
+    with open("./custom/prompts/hallucination_prompt.md") as f:
         hallucination_prompt = f.read()
 
     ans = GCP_GENERATION_MODEL().generate("\n".join([hallucination_prompt, context[0]]), input)
@@ -90,7 +90,7 @@ def geval_score():
     ]
 
     # Obtain an answer from the LLM
-    with open("./prompts/geval_prompt.md") as f:
+    with open("./custom/prompts/geval_prompt.md") as f:
         hallucination_prompt = f.read()
 
     ans = GCP_GENERATION_MODEL().generate(hallucination_prompt, user_query)
@@ -226,7 +226,7 @@ Alice: "Plan: fixes by Friday, marketing prep Monday, sync next Wednesday. Thank
 """
 
     # Obtain an answer from the LLM
-    with open("./prompts/dag_prompt.md") as f:
+    with open("./custom/prompts/dag_prompt.md") as f:
         dag_prompt = f.read()
 
     ans = GCP_GENERATION_MODEL().generate(dag_prompt, input)
@@ -262,9 +262,9 @@ def arena_geval():
     topic = "A smurf and Darth Vader meeting at a singles bar"
 
     # Generate the output for all the contestants
-    with open("./prompts/arena_prompt1.md") as f:
+    with open("./custom/prompts/arena_prompt1.md") as f:
         prompt1 = f.read()
-    with open("./prompts/arena_prompt2.md") as f:
+    with open("./custom/prompts/arena_prompt2.md") as f:
         prompt2 = f.read()
 
     ans1 = GCP_GENERATION_MODEL().generate(prompt1, topic)
