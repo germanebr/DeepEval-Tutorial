@@ -46,9 +46,18 @@ class GCP_GENERATION_MODEL:
             scopes=["https://www.googleapis.com/auth/cloud-platform"]
         )
 
-    def generate(self, prompt:str, context:str):
+    def generate(self, prompt:str, context:str, response_schema:dict=None):
+        if response_schema:
+            struct_out = {
+                "response_mime_type": "application/json",
+                "response_schema": response_schema
+            }
+        else:
+            struct_out = None
+        
         response = self.client.models.generate_content(
             model=GEMINI_MODEL,
-            contents=[prompt, context]
+            contents=[prompt, context],
+            config=struct_out
         )
         return response.text
