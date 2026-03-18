@@ -1,8 +1,12 @@
+import json
+
 from custom.metrics.summarization import get_summary_score
 from custom.metrics.prompt_alignment import get_prompt_alignment_score
 from custom.metrics.hallucination import get_hallucination_score
 from custom.metrics.geval import get_geval_score, get_conv_geval_score, get_arena_geval
 from custom.metrics.dag import get_dag_score, get_conv_dag_score
+
+from rag.metrics.ans_relevancy import get_ans_relevancy_score
 
 from deepeval.test_case import LLMTestCaseParams, Turn
 from deepeval.metrics.g_eval import Rubric
@@ -286,12 +290,31 @@ def arena_geval():
     print(f"\nArena GEval winner: {metric.winner}")
     print(f"Justification: {metric.reason}\n")
 
+def rag_answer_relevancy():
+    print("--- Answer Relevancy ---")
+
+    input = "What are the Triple Billion targets?"
+    print(input)
+    with open("./docs/rag_context_sample.json", "r", encoding="utf-8") as f:
+        context = json.dumps(json.load(f))
+
+    ans = GCP_GENERATION_MODEL().generate(input, context)
+    print(ans)
+
+    metric = get_ans_relevancy_score(
+        user_input = input + "\n\n" + context,
+        generated_ans = ans
+    )
+    print(f"\nAnswer Relevancy metric: {metric.score}")
+    print(f"Justification: {metric.reason}\n")
+
 if __name__ == "__main__":
-    summary_score()
-    prompt_alignment_score()
-    hallucination_score()
-    geval_score()
-    conv_geval_score()
-    dag_score()
-    conv_dag()
-    arena_geval()
+    # summary_score()
+    # prompt_alignment_score()
+    # hallucination_score()
+    # geval_score()
+    # conv_geval_score()
+    # dag_score()
+    # conv_dag()
+    # arena_geval()
+    rag_answer_relevancy()
