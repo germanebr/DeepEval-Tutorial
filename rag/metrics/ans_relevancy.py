@@ -5,13 +5,12 @@ by determining how relevant the generated content is compared to the provided in
 Additional information found in https://deepeval.com/docs/metrics-answer-relevancy
 """
 
-from deepeval import evaluate
 from deepeval.metrics import AnswerRelevancyMetric
 from deepeval.test_case import LLMTestCase
 
 from models.gcp_gemini import gcp_gemini_eval_model
 
-def get_ans_relevancy_score(user_input:str, generated_ans:str):
+def get_ans_relevancy_score(user_input:str, generated_ans:str) -> AnswerRelevancyMetric:
     test_case = LLMTestCase(
         input=user_input,
         actual_output=generated_ans

@@ -7,6 +7,7 @@ from custom.metrics.geval import get_geval_score, get_conv_geval_score, get_aren
 from custom.metrics.dag import get_dag_score, get_conv_dag_score
 
 from rag.metrics.ans_relevancy import get_ans_relevancy_score
+from rag.metrics.faithfulness import get_faithfulness_score
 
 from deepeval.test_case import LLMTestCaseParams, Turn
 from deepeval.metrics.g_eval import Rubric
@@ -308,6 +309,28 @@ def rag_answer_relevancy():
     print(f"\nAnswer Relevancy metric: {metric.score}")
     print(f"Justification: {metric.reason}\n")
 
+def rag_faithfulness():
+    print("--- Faithfulness ---")
+
+    input = "What are the Triple Billion targets?"
+    print(input)
+    with open("./docs/rag_context_sample.json", "r", encoding="utf-8") as f:
+        context = json.load(f)
+        str_context = json.dumps(context)
+
+        retrieved_context = [i['section_content'] for i in context]
+
+    ans = GCP_GENERATION_MODEL().generate(input, str_context)
+    print(ans)
+
+    metric = get_faithfulness_score(
+        user_input = input,
+        generated_ans = ans,
+        retrieved_context = retrieved_context
+    )
+    print(f"\nFaithfulness metric: {metric.score}")
+    print(f"Justification: {metric.reason}\n")
+
 if __name__ == "__main__":
     # summary_score()
     # prompt_alignment_score()
@@ -317,4 +340,5 @@ if __name__ == "__main__":
     # dag_score()
     # conv_dag()
     # arena_geval()
-    rag_answer_relevancy()
+    # rag_answer_relevancy()
+    rag_faithfulness()
