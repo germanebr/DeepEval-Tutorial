@@ -1,3 +1,10 @@
+"""
+This metric uses LLM-as-a-judge to evaluate the quality of the RAG pipeline's generator
+by determining how relevant the generated content is compared to the provided input.
+
+Additional information found in https://deepeval.com/docs/metrics-answer-relevancy
+"""
+
 from deepeval import evaluate
 from deepeval.metrics import AnswerRelevancyMetric
 from deepeval.test_case import LLMTestCase
