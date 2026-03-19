@@ -360,6 +360,33 @@ def rag_context_precision():
     print(f"\nContext Precision metric: {metric.score}")
     print(f"Justification: {metric.reason}\n")
 
+def rag_context_recall():
+    print("--- Contextual Recall ---")
+
+    input = "What are the Triple Billion targets?"
+    print(input)
+
+    with open("./docs/rag_context_sample.json", "r", encoding="utf-8") as f:
+        context = json.load(f)
+        str_context = json.dumps(context)
+
+        retrieved_context = [i['section_content'] for i in context]
+
+    ans = GCP_GENERATION_MODEL().generate(input, str_context)
+    print(ans)
+
+    # Let's simulate the expected result (answered from the last sections of the sample document)
+    expected_ans = "The Triple Billion targets are a cornerstone of the World Health Organization's (WHO) Thirteenth General Programme of Work (GPW13) for the period 2018-2025. They were created to translate the health-related Sustainable Development Goals (SDGs) into measurable goals."
+
+    metric = get_contextual_recall_score(
+        user_input = input,
+        generated_ans = ans,
+        expected_output = expected_ans,
+        retrieval_context = retrieved_context
+    )
+    print(f"\nContext Recall metric: {metric.score}")
+    print(f"Justification: {metric.reason}\n")
+
 if __name__ == "__main__":
     # summary_score()
     # prompt_alignment_score()
@@ -371,4 +398,5 @@ if __name__ == "__main__":
     # arena_geval()
     # rag_answer_relevancy()
     # rag_faithfulness()
-    rag_context_precision()
+    # rag_context_precision()
+    rag_context_recall()
