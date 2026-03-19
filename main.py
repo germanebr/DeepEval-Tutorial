@@ -10,6 +10,7 @@ from rag.metrics.ans_relevancy import get_ans_relevancy_score
 from rag.metrics.faithfulness import get_faithfulness_score
 from rag.metrics.contextual_precision import get_contextual_precision_score
 from rag.metrics.contextual_recall import get_contextual_recall_score
+from rag.metrics.contextual_relevancy import get_contextual_relevancy_score
 
 from deepeval.test_case import LLMTestCaseParams, Turn
 from deepeval.metrics.g_eval import Rubric
@@ -387,6 +388,29 @@ def rag_context_recall():
     print(f"\nContext Recall metric: {metric.score}")
     print(f"Justification: {metric.reason}\n")
 
+def rag_context_relevancy():
+    print("--- Contextual Relevancy ---")
+
+    input = "What are the Triple Billion targets?"
+    print(input)
+
+    with open("./docs/rag_context_sample.json", "r", encoding="utf-8") as f:
+        context = json.load(f)
+        str_context = json.dumps(context)
+
+        retrieved_context = [i['section_content'] for i in context]
+
+    ans = GCP_GENERATION_MODEL().generate(input, str_context)
+    print(ans)
+
+    metric = get_contextual_relevancy_score(
+        user_input = input,
+        generated_ans = ans,
+        retrieval_context = retrieved_context
+    )
+    print(f"\nContext Relevancy metric: {metric.score}")
+    print(f"Justification: {metric.reason}\n")
+
 if __name__ == "__main__":
     # summary_score()
     # prompt_alignment_score()
@@ -399,4 +423,5 @@ if __name__ == "__main__":
     # rag_answer_relevancy()
     # rag_faithfulness()
     # rag_context_precision()
-    rag_context_recall()
+    # rag_context_recall()
+    rag_context_relevancy()
