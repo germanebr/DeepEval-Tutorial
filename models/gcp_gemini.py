@@ -46,7 +46,7 @@ class GCP_GENERATION_MODEL:
             scopes=["https://www.googleapis.com/auth/cloud-platform"]
         )
 
-    def generate(self, prompt:str, context:str, response_schema:dict=None):
+    def generate(self, prompt:str, context:str='', response_schema:dict=None):
         if response_schema:
             struct_out = {
                 "response_mime_type": "application/json",
