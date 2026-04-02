@@ -13,12 +13,14 @@ Additional information found in https://deepeval.com/docs/prompt-optimization-ge
 You can read GEPA's paper in https://arxiv.org/pdf/2507.19457
 """
 
-from deepeval.optimizer import PromptOptimizer
+from deepeval.optimizer import PromptOptimizer as DeepEvalPromptOptimizer
 from deepeval.optimizer.algorithms import GEPA
 from deepeval.optimizer.policies import TieBreaker
 
-def gepa_optimizer(model_callback):
-    optimizer = PromptOptimizer(
+from models.gcp_gemini import gcp_gemini_eval_model
+
+def gepa_optimizer(model_callback, metrics:list):
+    optimizer = DeepEvalPromptOptimizer(
         algorithm=GEPA(
             iterations=10,  # Total number of mutation attempts. Defaults to 5
             pareto_size=5,  # Number of goldens in the Pareto validation set. Defaults to 3
@@ -26,7 +28,9 @@ def gepa_optimizer(model_callback):
             random_seed=42, # Controls randomness in golden splitting, minibatch sampling, Pareto selection, and tie-breaking. Defaults to time.time_ns()
             tie_breaker=TieBreaker.PREFER_CHILD    # Policy for breaking ties (PREFER_ROOT, PREFER_CHILD, RANDOM). Defaults to PREFER_CHILD
         ),
-        model_callback=model_callback
+        model_callback=model_callback,
+        metrics=metrics,
+        optimizer_model=gcp_gemini_eval_model
     )
 
     return optimizer

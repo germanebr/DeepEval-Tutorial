@@ -33,6 +33,7 @@ def get_summary_score(original_text:str, summary:str):
             "Does the score ensure the summary's accuracy with the source?",
             "Does a higher score mean a more comprehensive summary?"
         ],
+        # n=3,    # The number of assessment questions to gneerate when assessment_questions is not given. Defaults to 5
         include_reason=True,    # Includes a reason for the the evaluation score
         strict_mode=False,  # When True, the metric score will only have a total value of 0 or 1
         verbose_mode=False,  # When True, prints the intermediate steps used to calculate the score

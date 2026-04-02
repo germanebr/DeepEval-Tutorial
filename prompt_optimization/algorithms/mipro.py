@@ -7,11 +7,13 @@ Additional information found in https://deepeval.com/docs/prompt-optimization-mi
 You can read MIPRO's paper in https://arxiv.org/pdf/2406.11695
 """
 
-from deepeval.optimizer import PromptOptimizer
+from deepeval.optimizer import PromptOptimizer as DeepEvalPromptOptimizer
 from deepeval.optimizer.algorithms import MIPROV2
 
-def gepa_optimizer(model_callback):
-    optimizer = PromptOptimizer(
+from models.gcp_gemini import gcp_gemini_eval_model
+
+def mipro_optimizer(model_callback, metrics:list):
+    optimizer = DeepEvalPromptOptimizer(
         algorithm=MIPROV2(
             num_candidates=10,  # Number of diverse instruction candidates to generate in the proposal phase. Defaults to 10
             num_trials=20,  # Number of Bayesian Optimization trials to run. Each trial evaluates a different combination of instruction,demo_set. Defaults to 20
@@ -22,7 +24,9 @@ def gepa_optimizer(model_callback):
             num_demo_sets=5,    # Number of different demo set configurations to create. More sets = more variety to optimize. Defaults to 5
             random_seed=42, # Controls randomness in candidate generation, demo bootstrapping, and trial sampling. Defaults to time.time_ns()
         ),
-        model_callback=model_callback
+        model_callback=model_callback,
+        metrics=metrics,
+        optimizer_model=gcp_gemini_eval_model
     )
 
     return optimizer

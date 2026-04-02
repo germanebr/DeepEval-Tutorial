@@ -12,8 +12,12 @@ from rag.metrics.contextual_precision import get_contextual_precision_score
 from rag.metrics.contextual_recall import get_contextual_recall_score
 from rag.metrics.contextual_relevancy import get_contextual_relevancy_score
 
-from deepeval.test_case import LLMTestCaseParams, Turn
+from models.gcp_gemini import gcp_gemini_eval_model
+from models.custom_prompt_optimizer import MyPromptOptimizer
+
+from deepeval.test_case import LLMTestCase, LLMTestCaseParams, Turn
 from deepeval.metrics.g_eval import Rubric
+from deepeval.metrics import SummarizationMetric
 
 from models.gcp_gemini import GCP_GENERATION_MODEL
 
@@ -411,6 +415,58 @@ def rag_context_relevancy():
     print(f"\nContext Relevancy metric: {metric.score}")
     print(f"Justification: {metric.reason}\n")
 
+def prompt_optimize():
+    print("--- Prompt Optimization ---")
+
+    # Get the prompt
+    with open("./custom/prompts/summarization_prompt.md") as f:
+        prompt = f.read()
+
+    input = """
+    The 'coverage score' is calculated as the percentage of assessment questions
+    for which both the summary and the original document provide a 'yes' answer. This
+    method ensures that the summary not only includes key information from the original
+    text but also accurately represents it. A higher coverage score indicates a
+    more comprehensive and faithful summary, signifying that the summary effectively
+    encapsulates the crucial points and details from the original content.
+    """
+
+    optimizer = MyPromptOptimizer(
+        prompt=prompt,
+        goldens=[
+            # Golden Case 1: Use the existing input, but provide a hand-crafted, ideal summary
+            LLMTestCase(
+                input=input,
+                actual_output="The coverage score is a percentage of assessment questions where both the summary and original document provide a 'yes' answer. This method ensures the summary includes and accurately represents key information, with a higher score indicating a more comprehensive and faithful summary."
+            ),
+            # Golden Case 2: Add a second, distinct example with a hand-crafted ideal summary
+            # This example is taken from the "3. Progress in achieving the Triple Billion targets" section of your rag_context_sample.json
+            LLMTestCase(
+                input="The Triple Billion targets, a cornerstone of WHO's Thirteenth General Programme of Work (GPW13), track the collective progress by WHO and its Member States in promoting, providing and protecting health worldwide. The latest update illustrates the progress made since the start of GPW13 in 2018 and the key challenges particularly in the universal health coverage and health emergencies protection billions. Anchored in the health-related SDGS, WHO's GPW13 provides a strategic roadmap to enhance health and well-being for all (1). More importantly, GPW13 championed the results framework with impact measurement at its core to reinforce organizational accountability and transparency. The foundation of the impact measurement is the 46 outcome indicators centred on promoting the overall health and quality of life for the people, providing essential health services, and protecting people from health emergencies. The Triple Billion targets give strategic clarity to the impact measurement of GPW13. By summarizing the outcome indicators into three ambitious, but easy to understand and communicate goals, the Triple Billion targets effectively convey global health priorities, motivate collective action by the global community, facilitate transparency and accountability, and complement the strategic priorities set by WHO's GPW13 to address current and emerging global health priorities. For GPW13, the WHO Member States aim to enable one billion more people achieve better health and overall well-being, to provide one billion more people with access to essential health services without incurring financial hardship, and to better protect one billion more people from health emergencies worldwide by the end of the GPW13, extended from 2023 to 2025. This chapter provides a summary of the progress made in achieving the Triple Billion targets with projections to 2025, incorporating the latest available data from the outcome indicators at the country level.",
+                actual_output="The WHO's Triple Billion targets, part of its GPW13 program, track global health progress in promoting, providing, and protecting health. These targets, based on 46 outcome indicators, aim for one billion more people to achieve better health, access essential services without financial hardship, and be protected from health emergencies by 2025. They provide strategic clarity, motivate action, and ensure accountability for global health priorities."
+            )
+        ],
+        metrics=[
+            SummarizationMetric(
+                threshold=0.7,  # Adjust threshold as needed
+                model=gcp_gemini_eval_model,
+                assessment_questions=[
+                    "Does the summary accurately reflect the key information in the input?",
+                    "Does the summary cover all important aspects of the input?",
+                    "Is the summary free from information not present in the input?"
+                ]
+            )
+        ]
+    )
+
+    print("\t> Optimizing through GEPA")
+    gepa_prompt = optimizer.optimize_prompt(algorithm="gepa")
+    print(f"\t{gepa_prompt}")
+
+    print("\t> Optimizing through MIPROv2")
+    mipro_prompt = optimizer.optimize_prompt(algorithm="mipro")
+    print(f"\t{mipro_prompt}")
+
 if __name__ == "__main__":
     # summary_score()
     # prompt_alignment_score()
@@ -424,4 +480,5 @@ if __name__ == "__main__":
     # rag_faithfulness()
     # rag_context_precision()
     # rag_context_recall()
-    rag_context_relevancy()
+    # rag_context_relevancy()
+    prompt_optimize()
