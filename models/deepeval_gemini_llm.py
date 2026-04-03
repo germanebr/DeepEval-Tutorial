@@ -6,21 +6,15 @@ from custom import config
 
 from deepeval.models.base_model import DeepEvalBaseLLM
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL_NAME")
-GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT")
-GOOGLE_CLOUD_LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION")
-GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-GOOGLE_GENAI_USER_VERTEXAI = os.getenv("GOOGLE_GENAI_USER_VERTEXAI")
-
 class GoogleVertexAI(DeepEvalBaseLLM):
     """Class to implement Vertex AI for DeepEval"""
     def __init__(self):
         self.model = genai.Client(
             credentials=self._get_credentials(),
             http_options=HttpOptions(api_version="v1"),
-            vertexai=GOOGLE_GENAI_USER_VERTEXAI,
-            project=GOOGLE_CLOUD_PROJECT,
-            location=GOOGLE_CLOUD_LOCATION
+            vertexai=config.GOOGLE_GENAI_USER_VERTEXAI,
+            project=config.GOOGLE_CLOUD_PROJECT,
+            location=config.GOOGLE_CLOUD_LOCATION
         )
 
     def _get_credentials(self):
@@ -42,7 +36,7 @@ class GoogleVertexAI(DeepEvalBaseLLM):
             struct_out = None
         
         response = self.model.models.generate_content(
-            model=GEMINI_MODEL,
+            model=config.GEMINI_MODEL,
             contents=[prompt, context],
             config=struct_out
         )
